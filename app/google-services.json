@@ -1,0 +1,63 @@
+{
+  "project_info": {
+    "project_number": "940204310561",
+    "project_id": "att-it-aab31",
+    "storage_bucket": "att-it-aab31.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:940204310561:android:dc68e17ba860d8ba84a360",
+        "android_client_info": {
+          "package_name": "com.example.attit"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "940204310561-e0bh5g1jaqe37839lu2miqhl8rp9c50p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.attit",
+            "certificate_hash": "fc0bd23545d9cc23450f56d233c39556ab3f3d37"
+          }
+        },
+        {
+          "client_id": "940204310561-hch7hp4vb50v1jvngo467ochb88i8gp0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.attit",
+            "certificate_hash": "f394f13d833a9ed97508f786d17b1c89fa4a7aa3"
+          }
+        },
+        {
+          "client_id": "940204310561-ieqmbm8gmtc4tif03dovfgbd2pnbjhsf.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.attit",
+            "certificate_hash": "dc48bb1ea853659b7d39864983a22e67fba668e9"
+          }
+        },
+        {
+          "client_id": "940204310561-gdbb2o2c9uckg9tom1di66262l9atad7.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAXsglFup3MAH1BW_2QTQw96EZwyzcG9wg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "940204310561-gdbb2o2c9uckg9tom1di66262l9atad7.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

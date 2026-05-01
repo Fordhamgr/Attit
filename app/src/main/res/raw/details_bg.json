@@ -1,0 +1,24 @@
+{
+  "background_design": {
+    "theme_name": "Botanical_Minimalist",
+    "base_layer": {
+      "color_name": "Cream White",
+      "hex_code": "#FFFEFA",
+      "texture": "Subtle paper grain"
+    },
+    "decorative_elements": [
+      {
+        "asset_type": "Watercolor Leaves",
+        "positions": ["Top Right", "Bottom Left"],
+        "primary_color_hex": "#3A4B35",
+        "secondary_color_hex": "#6B8E5A"
+      },
+      {
+        "asset_type": "Paint Splatters",
+        "distribution": "Randomized Scatter",
+        "color_hex": "#EAC658",
+        "opacity": 0.8
+      }
+    ]
+  }
+}
