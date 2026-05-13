@@ -217,20 +217,29 @@ class MainActivity : ComponentActivity() {
                         } else { Box(modifier = Modifier.fillMaxSize().background(Color.White)) }
 
                         val scope = rememberCoroutineScope()
-                        val showBottomBar = remember(currentRoute) { currentRoute != "login" }
-                        val startDestination = if (!initialUser.isNullOrEmpty()) "home" else "login"
+                        val showBottomBar = remember(currentRoute) { currentRoute != "login" && currentRoute != "admin_dashboard" }
+                        val currentUserEmail = Firebase.auth.currentUser?.email
+                        val isRememberedAdmin = currentUserEmail == "admin@attit.com"
+
+                        val startDestination = if (!initialUser.isNullOrEmpty()) {
+                            if (isRememberedAdmin) "admin_dashboard" else "home"
+                        } else {
+                            "login"
+                        }
 
                         Scaffold(containerColor = Color.Transparent, contentWindowInsets = WindowInsets.systemBars) { innerPadding ->
                             Box(modifier = Modifier.fillMaxSize().padding(top = innerPadding.calculateTopPadding())) {
                                 SharedTransitionLayout {
                                     NavHost(
-                                        navController = navController, 
+                                        navController = navController,
                                         startDestination = startDestination,
                                         enterTransition = { androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(200, delayMillis = 50)) },
                                         exitTransition = { androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(200)) },
                                         popEnterTransition = { androidx.compose.animation.fadeIn(animationSpec = androidx.compose.animation.core.tween(200, delayMillis = 50)) },
                                         popExitTransition = { androidx.compose.animation.fadeOut(animationSpec = androidx.compose.animation.core.tween(200)) }
                                     ) {
+
+                                        // UPDATED LOGIN COMPOSABLE
                                         composable("login") {
                                             var isLoggingIn by remember { mutableStateOf(false) }
                                             val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.StartActivityForResult()) { result ->
@@ -248,12 +257,54 @@ class MainActivity : ComponentActivity() {
                                                     isLoggingIn = false
                                                 }
                                             }
+
                                             LoginScreen(
                                                 isLoading = isLoggingIn,
-                                                onSignInClick = {
+                                                onGoogleSignInClick = {
                                                     isLoggingIn = true
                                                     launcher.launch(googleAuth.getSignInIntent())
+                                                },
+                                                onEmailLoginSuccess = { isAdmin ->
+                                                    currentUserId = Firebase.auth.currentUser?.uid
+                                                    if (isAdmin) {
+                                                        navController.navigate("admin_dashboard") { popUpTo("login") { inclusive = true } }
+                                                    } else {
+                                                        navController.navigate("home") { popUpTo("login") { inclusive = true } }
+                                                    }
                                                 }
+                                            )
+                                        }
+
+                                        composable("admin_dashboard") {
+                                            AdminDashboardScreen(
+                                                onLogout = {
+                                                    scope.launch {
+                                                        googleAuth.signOut()
+                                                        currentUserId = null
+                                                        navController.navigate("login") { popUpTo(0) { inclusive = true } }
+                                                    }
+                                                },
+                                                onStudentClick = { uid, email ->
+                                                    // Navigate to details screen, passing the ID and Email securely in the URL
+                                                    navController.navigate("admin_student_details/$uid?email=$email")
+                                                }
+                                            )
+                                        }
+                                        // NEW ADMIN STUDENT DETAILS ROUTE
+                                        composable(
+                                            route = "admin_student_details/{userId}?email={email}",
+                                            arguments = listOf(
+                                                navArgument("userId") { type = NavType.StringType },
+                                                navArgument("email") { type = NavType.StringType; defaultValue = "Student" }
+                                            )
+                                        ) { backStackEntry ->
+                                            val userId = backStackEntry.arguments?.getString("userId") ?: return@composable
+                                            val email = backStackEntry.arguments?.getString("email") ?: "Student"
+
+                                            AdminStudentDetailsScreen(
+                                                userId = userId,
+                                                studentEmail = email,
+                                                onBack = { navController.popBackStack() }
                                             )
                                         }
 
@@ -270,12 +321,12 @@ class MainActivity : ComponentActivity() {
                                             }
                                         }
                                         composable("compare") { CompareScreen(viewModel = homeViewModel, onBack = { navController.popBackStack() }, globalXTilt = smoothX.value, globalYTilt = smoothY.value) }
-                                        composable("profile") { 
+                                        composable("profile") {
                                             com.example.attit.screens.ProfileScreen(
-                                                googleAuth = googleAuth, 
-                                                viewModel = homeViewModel, 
-                                                userEmail = Firebase.auth.currentUser?.email ?: "", 
-                                                onLogout = { 
+                                                googleAuth = googleAuth,
+                                                viewModel = homeViewModel,
+                                                userEmail = Firebase.auth.currentUser?.email ?: "",
+                                                onLogout = {
                                                     scope.launch(Dispatchers.IO) {
                                                         homeViewModel.clearUserData()
                                                         database.clearAllTables()
@@ -285,12 +336,12 @@ class MainActivity : ComponentActivity() {
                                                             navController.navigate("login") { popUpTo(0) { inclusive = true } }
                                                         }
                                                     }
-                                                }, 
-                                                onBack = { navController.popBackStack() }, 
-                                                onAboutClick = { navController.navigate("about") }, 
-                                                globalXTilt = smoothX.value, 
+                                                },
+                                                onBack = { navController.popBackStack() },
+                                                onAboutClick = { navController.navigate("about") },
+                                                globalXTilt = smoothX.value,
                                                 globalYTilt = smoothY.value
-                                            ) 
+                                            )
                                         }
                                         composable("details/{subjectId}", arguments = listOf(navArgument("subjectId") { type = NavType.StringType })) { backStackEntry -> val id = backStackEntry.arguments?.getString("subjectId"); DetailsScreen(subjectId = id, viewModel = homeViewModel, onBack = { navController.popBackStack() }, sharedTransitionScope = this@SharedTransitionLayout, animatedVisibilityScope = this@composable, globalXTilt = smoothX.value, globalYTilt = smoothY.value) }
                                         composable("about") { AboutScreen(viewModel = homeViewModel, onBack = { navController.popBackStack() }) }
