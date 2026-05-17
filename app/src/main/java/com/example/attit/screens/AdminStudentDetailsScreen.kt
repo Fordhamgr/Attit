@@ -6,6 +6,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -13,7 +14,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -41,15 +44,9 @@ fun AdminStudentDetailsScreen(
     var subjectsList by remember { mutableStateOf<List<AdminSubjectData>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
 
-    // Fetch subjects just for this student
     LaunchedEffect(userId) {
         try {
-            val snapshot = db.collection("students")
-                .document(userId)
-                .collection("subjects")
-                .get()
-                .await()
-
+            val snapshot = db.collection("students").document(userId).collection("subjects").get().await()
             subjectsList = snapshot.documents.map { doc ->
                 AdminSubjectData(
                     name = doc.getString("name") ?: "Unknown Subject",
@@ -65,42 +62,112 @@ fun AdminStudentDetailsScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
+    // Root Container - completely solid to stop background leaks
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF2F4F7))
+    ) {
+        // --- CUSTOM RED HEADER (Fixes top edge leak) ---
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(Color(0xFF8B0000), Color(0xFFD32F2F))
+                    ),
+                    shape = RoundedCornerShape(bottomStart = 40.dp, bottomEnd = 40.dp)
+                )
+        )
+
+        Column(modifier = Modifier.fillMaxSize()) {
+
+            // --- HEADER CONTENT ---
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .statusBarsPadding() // Safely pushes below notch
+                    .padding(horizontal = 16.dp, vertical = 12.dp)
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier
+                            .background(Color.White.copy(alpha = 0.2f), CircleShape)
+                            .size(44.dp)
+                    ) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Back", tint = Color.White)
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
                     Column {
-                        Text("Student Details", fontWeight = FontWeight.Bold, fontSize = 20.sp)
-                        Text(studentEmail, fontSize = 12.sp, color = Color.Gray)
+                        Text(
+                            text = "Student Overview",
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            fontFamily = FontFamily.SansSerif
+                        )
+                        Text(
+                            // Formats "name@email.com" to "Name"
+                            text = studentEmail.substringBefore("@").replaceFirstChar { it.uppercase() },
+                            color = Color.White,
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontFamily = FontFamily.SansSerif
+                        )
+                        Text(
+                            text = studentEmail,
+                            color = Color.White.copy(alpha = 0.9f),
+                            fontSize = 13.sp,
+                            fontFamily = FontFamily.SansSerif
+                        )
                     }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                }
+            }
+
+            // --- MAIN CONTENT AREA ---
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                if (isLoading) {
+                    // FIXED: Properly centered full-size box so spinner can't glitch to the side
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(56.dp),
+                            color = Color(0xFFD32F2F),
+                            strokeWidth = 5.dp
+                        )
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White, titleContentColor = Color.Black),
-                modifier = Modifier.shadow(elevation = 4.dp, spotColor = Color.LightGray)
-            )
-        },
-        containerColor = Color(0xFFF7F8FA)
-    ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = Color.Black)
-            } else if (subjectsList.isEmpty()) {
-                Text("This student hasn't added any subjects yet.", color = Color.Gray, modifier = Modifier.align(Alignment.Center))
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
-                    contentPadding = PaddingValues(bottom = 32.dp)
-                ) {
-                    item {
-                        Text("Subjects Enrolled (${subjectsList.size})", fontWeight = FontWeight.Bold, color = Color.Gray, modifier = Modifier.padding(bottom = 12.dp, start = 4.dp))
+                } else if (subjectsList.isEmpty()) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text(
+                            text = "No subjects enrolled.",
+                            color = Color.Gray,
+                            fontSize = 16.sp,
+                            fontFamily = FontFamily.SansSerif,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
-                    items(subjectsList) { subject ->
-                        AdminSubjectCard(subject)
-                        Spacer(modifier = Modifier.height(12.dp))
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 16.dp, bottom = 40.dp)
+                    ) {
+                        item {
+                            Text(
+                                text = "Enrolled Subjects (${subjectsList.size})",
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF666666),
+                                fontSize = 14.sp,
+                                fontFamily = FontFamily.SansSerif,
+                                modifier = Modifier.padding(bottom = 16.dp, start = 8.dp)
+                            )
+                        }
+                        items(subjectsList) { subject ->
+                            AdminSubjectCard(subject)
+                            Spacer(modifier = Modifier.height(16.dp))
+                        }
                     }
                 }
             }
@@ -116,33 +183,81 @@ fun AdminSubjectCard(subject: AdminSubjectData) {
     val statusColor = when {
         percentage >= subject.goal -> Color(0xFF4CAF50) // Green
         percentage >= subject.goal - 10 -> Color(0xFFFFC107) // Yellow
-        else -> Color(0xFFF44336) // Red
+        else -> Color(0xFFD32F2F) // Match Red Theme
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth().shadow(4.dp, RoundedCornerShape(16.dp), spotColor = Color.LightGray),
+        modifier = Modifier
+            .fillMaxWidth()
+            .shadow(elevation = 8.dp, shape = RoundedCornerShape(24.dp), spotColor = Color(0x1A000000))
+            .clip(RoundedCornerShape(24.dp)), // Keeps ripple effect inside the rounded corners
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(24.dp)
     ) {
         Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            modifier = Modifier.padding(20.dp).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(text = subject.name, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(text = "Goal: ${subject.goal}%", fontSize = 12.sp, color = Color.Gray)
+
+            // Left Side: Icon & Info
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                // Sleek initial box
+                Box(
+                    modifier = Modifier.size(48.dp).background(Color(0xFFF3F4F6), RoundedCornerShape(14.dp)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = subject.name.take(1).uppercase(),
+                        color = Color(0xFF111111),
+                        fontWeight = FontWeight.Black,
+                        fontSize = 18.sp,
+                        fontFamily = FontFamily.SansSerif
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column {
+                    Text(
+                        text = subject.name,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 17.sp,
+                        color = Color(0xFF111111),
+                        fontFamily = FontFamily.SansSerif
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "Goal: ${subject.goal}%",
+                        fontSize = 13.sp,
+                        color = Color(0xFF888888),
+                        fontFamily = FontFamily.SansSerif,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
 
+            // Right Side: Progress
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(contentAlignment = Alignment.Center, modifier = Modifier.size(50.dp)) {
-                    CircularProgressIndicator(progress = { 1f }, modifier = Modifier.fillMaxSize(), color = Color(0xFFEEEEEE), strokeWidth = 4.dp)
-                    CircularProgressIndicator(progress = { progressAnim }, modifier = Modifier.fillMaxSize(), color = statusColor, strokeWidth = 4.dp)
-                    Text(text = "${percentage.toInt()}%", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = statusColor)
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.size(52.dp)) {
+                    CircularProgressIndicator(progress = { 1f }, modifier = Modifier.fillMaxSize(), color = Color(0xFFF0F0F0), strokeWidth = 5.dp)
+                    CircularProgressIndicator(progress = { progressAnim }, modifier = Modifier.fillMaxSize(), color = statusColor, strokeWidth = 5.dp)
+                    Text(
+                        text = "${percentage.toInt()}%",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = statusColor,
+                        fontFamily = FontFamily.SansSerif
+                    )
                 }
                 Spacer(modifier = Modifier.height(6.dp))
-                Text(text = "${subject.attended} / ${subject.total}", fontSize = 12.sp, color = Color.DarkGray, fontWeight = FontWeight.SemiBold)
+                Text(
+                    text = "${subject.attended} / ${subject.total}",
+                    fontSize = 12.sp,
+                    color = Color.DarkGray,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.SansSerif
+                )
             }
         }
     }

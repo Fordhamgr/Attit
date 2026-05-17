@@ -210,14 +210,18 @@ class MainActivity : ComponentActivity() {
                             }
                             .then(if (activeSubjectId != null) Modifier else Modifier)
                     ) {
-                        if (currentRoute != "login") {
+                        if (currentRoute != "login" && currentRoute?.startsWith("admin") != true) {
                             Box(modifier = Modifier.fillMaxSize().liquidLens(liquidState)) {
                                 GyroBackground(currentTheme = currentTheme, xTiltProvider = { smoothX.value }, yTiltProvider = { smoothY.value })
                             }
-                        } else { Box(modifier = Modifier.fillMaxSize().background(Color.White)) }
+                        } else {
+                            // Fixes the top bar leak! Fills the transparent gap with Dark Red for Admin, White for Login.
+                            val bgColor = if (currentRoute?.startsWith("admin") == true) Color(0xFF8B0000) else Color.White
+                            Box(modifier = Modifier.fillMaxSize().background(bgColor))
+                        }
 
                         val scope = rememberCoroutineScope()
-                        val showBottomBar = remember(currentRoute) { currentRoute != "login" && currentRoute != "admin_dashboard" }
+                        val showBottomBar = remember(currentRoute) { currentRoute != "login" && currentRoute != "admin_dashboard"&&currentRoute?.startsWith("admin_student_details") != true }
                         val currentUserEmail = Firebase.auth.currentUser?.email
                         val isRememberedAdmin = currentUserEmail == "admin@attit.com"
 
