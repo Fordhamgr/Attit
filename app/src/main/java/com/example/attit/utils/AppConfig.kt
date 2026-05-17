@@ -3,10 +3,10 @@ package com.example.attit.utils
 object AppConfig {
     // Global App Constants
     const val APP_NAME = "ATTit"
-    const val VERSION = "3.2"
+    const val VERSION = "3.4"
 
     // Contact
-    const val CONTACT_EMAIL = "flashhlikechicks@gmail.com"
+    const val CONTACT_EMAIL = "dhanushdavediga@gmail.com"
     const val BUG_REPORT_SUBJECT = "Bug Report - $APP_NAME $VERSION"
 
     // About Page Content
@@ -15,8 +15,8 @@ object AppConfig {
             "This app works both Offline and Online"+
             " All the information is being encrypted !!"
 
-    const val DEV_TITLE = "Developer"
-    const val DEV_DESC = "Dinosaur"
+    const val DEV_TITLE = "Developer's"
+    const val DEV_DESC = "Dhanush,Vishwas,Aditi,Prasthuthi"
 
     // Links
     const val DOWNLOAD_URL = "https://attit.netlify.app/"

@@ -1,6 +1,7 @@
 package com.example.attit.screens
 
 import android.content.Intent
+import com.example.attit.utils.ApkDownloader
 import android.graphics.Bitmap
 import android.graphics.Color as AndroidColor
 import android.net.Uri
@@ -75,6 +76,7 @@ fun ProfileScreen(
     globalYTilt: Float
 ) {
     val context = LocalContext.current
+    val ApkDownloader = remember { ApkDownloader(context) }
     val savedName by viewModel.savedUsername.collectAsStateWithLifecycle()
     val currentAvatarId by viewModel.currentAvatar.collectAsStateWithLifecycle()
     val currentTheme by viewModel.currentTheme.collectAsStateWithLifecycle()
@@ -477,10 +479,14 @@ fun ProfileScreen(
             confirmButton = {
                 Button(
                     onClick = {
+                        // 1. Close the dialog
                         showUpdateDialog = false
+
+                        // 2. Get the target URL
                         val urlToOpen = if (downloadUrl.isNotEmpty()) downloadUrl else AppConfig.DOWNLOAD_URL
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(urlToOpen))
-                        context.startActivity(intent)
+
+                        // 3. Trigger the seamless background download & auto-install!
+                        ApkDownloader.downloadAndInstall(urlToOpen)
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                 ) { Text("Download") }
