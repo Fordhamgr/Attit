@@ -8,6 +8,7 @@ import android.content.IntentFilter
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.provider.Settings
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import java.io.File
@@ -71,22 +72,21 @@ class ApkDownloader(private val context: Context) {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_GRANT_READ_URI_PERMISSION
             }
 
-            // --- THE NEW FIX: Check for "Unknown Sources" Permission ---
+            // --- Check for "Unknown Sources" Permission (Android 8.0+) ---
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 if (!context.packageManager.canRequestPackageInstalls()) {
                     // The user hasn't granted permission yet.
                     Toast.makeText(context, "Please allow ATT it to install updates", Toast.LENGTH_LONG).show()
 
                     // Auto-route them to the exact settings screen for your app
-                    val settingsIntent = Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
+                    val settingsIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
                         data = Uri.parse("package:${context.packageName}")
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK
                     }
                     context.startActivity(settingsIntent)
-                    return // Stop the installation crash. After they toggle it, they can press update again.
+                    return // Stop the installation crash.
                 }
             }
-            // -----------------------------------------------------------
 
             // If we have permission, trigger the install!
             context.startActivity(installIntent)

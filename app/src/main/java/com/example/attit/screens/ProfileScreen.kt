@@ -76,7 +76,7 @@ fun ProfileScreen(
     globalYTilt: Float
 ) {
     val context = LocalContext.current
-    val ApkDownloader = remember { ApkDownloader(context) }
+    val apkDownloader = remember { ApkDownloader(context) }
     val savedName by viewModel.savedUsername.collectAsStateWithLifecycle()
     val currentAvatarId by viewModel.currentAvatar.collectAsStateWithLifecycle()
     val currentTheme by viewModel.currentTheme.collectAsStateWithLifecycle()
@@ -102,12 +102,18 @@ fun ProfileScreen(
         viewModel.loadUserProfile(userEmail)
         if (qrBitmap == null) {
             val uid = googleAuth.getSignedInUser() ?: "unknown"
-            withContext(Dispatchers.IO) { qrBitmap = generateQRCode(uid) }
+            withContext(Dispatchers.IO) { qrBitmap = generateQRCode(userEmail) }
         }
     }
 
     LaunchedEffect(savedName) {
-        if (savedName.isNotEmpty()) usernameInput = savedName
+        if (savedName.isNotEmpty()) {
+            usernameInput = savedName
+        } else if (userEmail.isNotEmpty()) {
+            val defaultUsername = userEmail.substringBefore("@").replace(".", "").lowercase()
+            viewModel.saveUsername(userEmail, defaultUsername)
+            usernameInput = defaultUsername
+        }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -200,8 +206,8 @@ fun ProfileScreen(
 
                         Spacer(modifier = Modifier.width(20.dp))
 
-                        // Text Info
-                        Column {
+                        // Text Info (ADDED WEIGHT HERE TO PREVENT OVERFLOW)
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = if (savedName.isNotEmpty()) savedName else "Student",
                                 style = MaterialTheme.typography.titleLarge.copy(
@@ -275,7 +281,7 @@ fun ProfileScreen(
                                                     showUpdateDialog = true
                                                 } else {
                                                     // Already latest
-                                                    Toast.makeText(context, "You are up to date! 🚀", Toast.LENGTH_SHORT).show()
+                                                    Toast.makeText(context, "You are up to date! \uD83D\uDE80", Toast.LENGTH_SHORT).show()
                                                 }
                                             } else {
                                                 Toast.makeText(context, "Config not found", Toast.LENGTH_SHORT).show()
@@ -289,7 +295,7 @@ fun ProfileScreen(
                             }
                         )
 
-                        // BUTTON 3: SHARE (IMPROVED INTENT)
+                        // BUTTON 3: SHARE
                         QuickActionCard(
                             icon = Icons.Default.Share,
                             label = "Share",
@@ -375,7 +381,7 @@ fun ProfileScreen(
                                 if (isEditing) {
                                     OutlinedTextField(
                                         value = usernameInput,
-                                        onValueChange = { 
+                                        onValueChange = {
                                             usernameInput = it
                                             viewModel.resetUsernameError()
                                         },
@@ -486,7 +492,7 @@ fun ProfileScreen(
                         val urlToOpen = if (downloadUrl.isNotEmpty()) downloadUrl else AppConfig.DOWNLOAD_URL
 
                         // 3. Trigger the seamless background download & auto-install!
-                        ApkDownloader.downloadAndInstall(urlToOpen)
+                        apkDownloader.downloadAndInstall(urlToOpen)
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                 ) { Text("Download") }
@@ -585,7 +591,7 @@ private fun QuickActionCard(
         themeColor = themeColor,
         shape = RoundedCornerShape(16.dp),
         modifier = modifier
-            .height(80.dp)
+            .defaultMinSize(minHeight = 85.dp) // <-- FIX: Flexible height instead of fixed
             .clip(RoundedCornerShape(16.dp))
             .clickable {
                 val now = System.currentTimeMillis()
@@ -596,7 +602,7 @@ private fun QuickActionCard(
             }
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp, horizontal = 4.dp), // <-- FIX: Added padding
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -610,8 +616,8 @@ private fun QuickActionCard(
                 Icon(icon, null, tint = contentColor, modifier = Modifier.size(18.dp))
             }
             Spacer(modifier = Modifier.height(6.dp))
-            Text(label, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = if(isDark) Color.White else Color.Black.copy(0.8f))
-            Text(subLabel, fontSize = 10.sp, color = if(isDark) Color.White.copy(0.5f) else Color.Black.copy(0.5f))
+            Text(label, fontWeight = FontWeight.Bold, fontSize = 12.sp, textAlign = TextAlign.Center, color = if(isDark) Color.White else Color.Black.copy(0.8f))
+            Text(subLabel, fontSize = 10.sp, textAlign = TextAlign.Center, color = if(isDark) Color.White.copy(0.5f) else Color.Black.copy(0.5f))
         }
     }
 }

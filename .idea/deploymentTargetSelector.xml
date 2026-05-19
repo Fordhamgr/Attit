@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="ATT it">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-05-13T07:06:45.306112600Z">
+        <DropdownSelection timestamp="2026-05-19T02:21:05.051813800Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=ZD222NWYK7" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\dhanu\.android\avd\Medium_Phone.avd" />
             </handle>
           </Target>
         </DropdownSelection>

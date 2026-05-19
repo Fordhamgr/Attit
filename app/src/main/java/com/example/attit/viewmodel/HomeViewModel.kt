@@ -142,14 +142,16 @@ class HomeViewModel(
     fun loadUsername(email: String) {
         viewModelScope.launch(Dispatchers.IO) {
             val cachedName = repository.getCachedUsername()
-            if (!cachedName.isNullOrEmpty()) {
-                _savedUsername.value = cachedName
-            }
+            if (!cachedName.isNullOrEmpty()) _savedUsername.value = cachedName
+
             val cloudName = repository.getUsername(email)
-            if (cloudName != null) {
+            if (!cloudName.isNullOrEmpty()) {
                 _savedUsername.value = cloudName
             } else {
-                _savedUsername.value = ""
+                // AUTO-GENERATE DEFAULT USERNAME
+                val defaultUsername = email.substringBefore("@").replace(".", "").lowercase()
+                repository.saveUsername(email, defaultUsername)
+                _savedUsername.value = defaultUsername
             }
         }
     }
@@ -163,10 +165,12 @@ class HomeViewModel(
             if (cachedAvatar != null) _currentAvatar.value = cachedAvatar
 
             val cloudName = repository.getUsername(email)
-            if (cloudName != null) {
+            if (!cloudName.isNullOrEmpty()) {
                 _savedUsername.value = cloudName
             } else {
-                _savedUsername.value = ""
+                val defaultUsername = email.substringBefore("@").replace(".", "").lowercase()
+                repository.saveUsername(email, defaultUsername)
+                _savedUsername.value = defaultUsername
             }
 
             val cloudAvatar = repository.fetchAvatar(email)
@@ -198,7 +202,14 @@ class HomeViewModel(
             _friendSubjects.value = emptyList()
             lastFoundUid = null
 
-            val result = repository.findUserSimple(input)
+
+            val searchQuery = if (input.contains("@")) {
+                input.substringBefore("@").replace(".", "").lowercase()
+            } else {
+                input.removePrefix("@").lowercase().trim()
+            }
+
+            val result = repository.findUserSimple(searchQuery)
             if (result != null) {
                 _friendStatus.value = "Viewing ${result.username}"
                 _foundFriendEmail.value = result.email

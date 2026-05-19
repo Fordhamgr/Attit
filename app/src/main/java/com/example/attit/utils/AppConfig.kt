@@ -3,7 +3,7 @@ package com.example.attit.utils
 object AppConfig {
     // Global App Constants
     const val APP_NAME = "ATTit"
-    const val VERSION = "3.4"
+    const val VERSION = "3.6"
 
     // Contact
     const val CONTACT_EMAIL = "dhanushdavediga@gmail.com"
